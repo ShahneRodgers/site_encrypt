@@ -17,14 +17,16 @@ defmodule SiteEncrypt.Registry do
     config
   end
 
-  @spec register_challenge(SiteEncrypt.id(), String.t(), String.t()) :: :ok
-  def register_challenge(id, challenge_token, key_thumbprint) do
+  @spec register_challenge(SiteEncrypt.id(), String.t(), String.t(), boolean()) :: :ok
+  def register_challenge(id, challenge_token, key_thumbprint, call_callback \\ true) do
     Registry.register(__MODULE__, {id, {:challenge, challenge_token}}, key_thumbprint)
+    if call_callback, do: config(id).callback.registered_challenge(id, challenge_token, key_thumbprint)
     :ok
   end
 
-  @spec get_challenge(SiteEncrypt.id(), String.t()) :: {pid, String.t()} | nil
-  def get_challenge(id, challenge_token) do
+  @spec get_challenge(SiteEncrypt.id(), String.t(), boolean()) :: {pid, String.t()} | nil
+  def get_challenge(id, challenge_token, call_callback \\ true) do
+    if call_callback, do: config(id).callback.got_challenge(id, challenge_token)
     case Registry.lookup(__MODULE__, {id, {:challenge, challenge_token}}) do
       [{pid, key_thumbprint}] ->
         send(pid, {:got_challenge, id, challenge_token})

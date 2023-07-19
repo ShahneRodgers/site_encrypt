@@ -82,7 +82,15 @@ defmodule SiteEncrypt.Phoenix do
       @impl SiteEncrypt
       def handle_new_cert, do: :ok
 
+      @impl SiteEncrypt
+      def registered_challenge(_id, _challenge_token, _key_thumbprint), do: :ok
+
+      @impl SiteEncrypt
+      def got_challenge(_id, _challenge_token), do: :ok
+
       defoverridable handle_new_cert: 0
+      defoverridable registered_challenge: 3
+      defoverridable got_challenge: 2
     end
   end
 

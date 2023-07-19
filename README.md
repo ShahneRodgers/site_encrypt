@@ -185,6 +185,48 @@ If you want a more manual first deploy test, here's how you can do it:
 
 __Note__: be careful not to invoke these functions too frequently, because you might trip some rate limit on Let's Encrypt. See [here](https://letsencrypt.org/docs/rate-limits/) for more details.
 
+## Clustering
+
+SiteEncrypt currently provides minimal support for nodes running in a cluster, so this must largely be handled by your system. There are two
+callbacks provided that can be used to provide some support: 
+
+`registered_challenge/3` is called after a node contacts the ACME server and generates an authorization key pair
+`got_challenge/2` is called whenever an ACME request endpoint is reached, before the node responds to the challenge
+
+
+These can be used by your application to ensure that the challenge token is available to all nodes regardless of which node initiates
+the request or which node receives the callback:
+
+for example, you could add in your endpoint
+```elixir
+  @impl SiteEncrypt
+  def registered_challenge(_id, challenge_token, key_thumbprint) do
+    saved_acme_challenge(challenge_token)
+    |> File.write(key_thumbprint)
+  end
+
+  @impl SiteEncrypt
+  def got_challenge(id, challenge_token) do
+    saved_acme_challenge(challenge_token)
+    |> File.read()
+    |> case do
+      {:ok, key_thumbprint} ->
+        SiteEncrypt.Registry.register_challenge(id, challenge_token, key_thumbprint, false)
+
+      _ ->
+        :ok
+    end
+
+    :ok
+  end
+
+  defp saved_acme_challenge(challenge_token) do
+    # FIXME: generate a safe path, being careful to avoid path traversal vulnerabilities
+  end
+```
+to save the challenge in a shared folder. If your cluster is large or will be restarted without keeping the saved certificate frequently,
+you may also need to change the SiteEncrypt.config call to ensure you do not breach the ACME server's rate limits.
+
 
 ## License
 

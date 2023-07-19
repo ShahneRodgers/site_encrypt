@@ -44,6 +44,21 @@ defmodule SiteEncrypt do
   """
   @callback certification() :: certification()
 
+  @doc """
+  Invoked after a challenge is registered. This can be used
+  when a cluster of nodes exist so that other nodes in the
+  cluster know of the challenge.
+  """
+  @callback registered_challenge(SiteEncrypt.id(), String.t(), String.t()) :: any
+
+  @doc """
+  Invoked when the CA invokes the challenge. This callback
+  can be used when a cluster of nodes exist to make sure
+  that the node that registered the challenge is informed
+  of its completion.
+  """
+  @callback got_challenge(SiteEncrypt.id(), String.t()) :: any
+
   @doc "Invoked after the new certificate has been obtained."
   @callback handle_new_cert() :: any
 
